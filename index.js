@@ -1,0 +1,176 @@
+/**
+ * Tavern Prefill Adapter — extension entry point.
+ *
+ * Hooks:
+ *   - CHAT_COMPLETION_SETTINGS_READY: fires with the FINAL generate_data
+ *     payload right before SillyTavern POSTs it to the backend
+ *     (public/scripts/openai.js sendOpenAIRequest). This is the exact
+ *     "request built, not yet sent" moment the extension targets.
+ *   - GENERATION_STARTED / GENERATION_ENDED / GENERATION_STOPPED: tracks the
+ *     generation type ('normal' | 'regenerate' | 'swipe' | 'continue' |
+ *     'impersonate' | 'quiet' ...) so the transformer can decide which
+ *     requests may carry a prefill.
+ *
+ * The transformer mutates ONLY the outgoing request copy — never the chat
+ * history — and fails open on any error. When the extension is disabled the
+ * handler returns before touching anything.
+ */
+
+import { extension_settings } from '../../../extensions.js';
+import { saveSettingsDebounced } from '../../../../script.js';
+
+import { SettingsManager } from './src/core/settings-manager.js';
+import { Logger } from './src/core/logger.js';
+import { transformChatCompletionRequest } from './src/core/request-transformer.js';
+import { AdapterRegistry } from './src/adapters/index.js';
+import { ProfileManager } from './src/profiles/profile-manager.js';
+import { SettingsUI } from './src/ui/settings.js';
+import { ProfileEditor } from './src/ui/profile-editor.js';
+
+export const extensionName = 'TavernPrefillAdapter';
+export const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
+
+// ----------------------------------------------------------------------
+// Settings / profiles / registry
+// ----------------------------------------------------------------------
+
+extension_settings[extensionName] ??= {};
+
+const settingsManager = new SettingsManager(extension_settings[extensionName], () => {
+    saveSettingsDebounced();
+});
+
+const profileManager = new ProfileManager(settingsManager);
+
+const registry = new AdapterRegistry({
+    getCustomProfile: () => profileManager.getActiveProfileForRequest(),
+});
+
+const logger = new Logger(() => Boolean(settingsManager.get('debug')));
+
+// ----------------------------------------------------------------------
+// Generation-type tracking
+// ----------------------------------------------------------------------
+
+let lastGenerationType = null;
+
+// ----------------------------------------------------------------------
+// Chat completion request hook
+// ----------------------------------------------------------------------
+
+/**
+ * CHAT_COMPLETION_SETTINGS_READY handler.
+ * @param {object} generateData The final outgoing payload
+ */
+function onChatCompletionSettingsReady(generateData) {
+    transformChatCompletionRequest(generateData, {
+        settings: settingsManager.get(),
+        getGenerationType: () => lastGenerationType,
+        getChat: () => {
+            try {
+                return SillyTavern.getContext().chat;
+            } catch {
+                return [];
+            }
+        },
+        getCustomProfile: () => profileManager.getActiveProfileForRequest(),
+        registry,
+        logger,
+    });
+}
+
+function onGenerationStarted(type) {
+    lastGenerationType = typeof type === 'string' ? type : null;
+}
+
+function onGenerationStopped() {
+    lastGenerationType = null;
+}
+
+// ----------------------------------------------------------------------
+// Lifecycle hooks (manifest.json hooks → exported functions)
+// ----------------------------------------------------------------------
+
+export function onActivate() {
+    // Nothing to do synchronously; the jQuery ready block wires the UI.
+}
+
+export function onEnable() {
+    // Keep lastGenerationType consistent.
+    lastGenerationType = null;
+}
+
+export function onDisable() {
+    lastGenerationType = null;
+}
+
+export function onClean() {
+    // Clean extension data button: reset to defaults.
+    settingsManager.resetToDefaults();
+}
+
+// ----------------------------------------------------------------------
+// UI bootstrap
+// ----------------------------------------------------------------------
+
+jQuery(async () => {
+    settingsManager.applyDefaults();
+    // Open the editing draft only when a profile is actually selected;
+    // otherwise the editor starts blank (New Profile is created on demand).
+    const selectedProfileId = settingsManager.get('selectedCustomProfileId');
+    if (selectedProfileId && profileManager.findCommitted(selectedProfileId)) {
+        profileManager.beginEdit(selectedProfileId);
+    }
+
+    const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
+    $('#extensions_settings').append(settingsHtml);
+
+    const uiRoot = $('.tpa-settings').first();
+
+    const settingsUI = new SettingsUI({
+        settingsManager,
+        profileManager,
+        registry,
+        logger,
+        getChatCompletionSource: () => {
+            try {
+                return String(SillyTavern.getContext().chatCompletionSettings?.chat_completion_source || '');
+            } catch {
+                return '';
+            }
+        },
+        getModel: () => {
+            try {
+                return String(SillyTavern.getContext().chatCompletionSettings?.openai_model || SillyTavern.getContext().chatCompletionSettings?.custom_model || '');
+            } catch {
+                return '';
+            }
+        },
+    });
+    settingsUI.mount(uiRoot);
+
+    const profileEditor = new ProfileEditor({ profileManager, logger });
+    profileEditor.mount(uiRoot);
+
+    const context = SillyTavern.getContext();
+    const { eventSource, event_types } = context;
+
+    eventSource.on(event_types.CHAT_COMPLETION_SETTINGS_READY, onChatCompletionSettingsReady);
+    eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
+    eventSource.on(event_types.GENERATION_ENDED, onGenerationStopped);
+    eventSource.on(event_types.GENERATION_STOPPED, onGenerationStopped);
+
+    if (typeof context.registerDebugFunction === 'function') {
+        context.registerDebugFunction(
+            extensionName,
+            'Tavern Prefill Adapter',
+            'Enable Debug Mode; debug logs only ever show redacted payloads.',
+            () => {
+                settingsManager.set('debug', true);
+                toastr.info('Tavern Prefill Adapter Debug Mode enabled. Logs are redacted.', extensionName);
+            },
+        );
+    }
+
+    logger.debug('Loaded.');
+});

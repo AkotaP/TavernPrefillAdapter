@@ -1,0 +1,124 @@
+<div class="tpa-settings">
+    <div class="tpa-header">
+        <b>Tavern Prefill Adapter</b>
+        <div class="tpa-muted">统一处理不同 Provider 的 Assistant / Reasoning Prefill 协议翻译。</div>
+    </div>
+
+    <div class="tpa-panel">
+        <label class="tpa-flex">
+            <input id="tpa_enabled" type="checkbox" />
+            <span>Enable</span>
+        </label>
+
+        <div class="tpa-grid2">
+            <label>
+                <span>Provider</span>
+                <select id="tpa_provider">
+                    <option value="auto">Auto Detect</option>
+                    <option value="ollama">Ollama</option>
+                    <option value="moonshot">Moonshot / Kimi</option>
+                    <option value="deepseek">DeepSeek Official</option>
+                    <option value="generic">Generic OpenAI</option>
+                    <option value="custom">Custom</option>
+                    <option value="skip">Disabled (passthrough)</option>
+                </select>
+            </label>
+            <label>
+                <span>Mode</span>
+                <select id="tpa_mode">
+                    <option value="auto">Auto</option>
+                    <option value="manual">Manual</option>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <div id="tpa_auto_section" class="tpa-panel">
+        <div class="tpa-subheader">Auto Prefill Parsing</div>
+        <div class="tpa-grid2">
+            <label>
+                <span>Reasoning Start Tag</span>
+                <input id="tpa_reasoning_start_tag" type="text" />
+            </label>
+            <label>
+                <span>Reasoning End Tag</span>
+                <input id="tpa_reasoning_end_tag" type="text" />
+            </label>
+        </div>
+        <div class="tpa-muted" data-i18n="tpa_auto_hint">Auto 模式解析“Start Reply With”生成的回复前缀；示例：<code>*thinking*</code> 开头表示思考预填充，<code>*response*</code> 之后是正文预填充。</div>
+    </div>
+
+    <div id="tpa_manual_section" class="tpa-panel">
+        <div class="tpa-subheader">Manual Prefill</div>
+        <label>
+            <span>Reasoning Prefill</span>
+            <textarea id="tpa_manual_reasoning" rows="4" placeholder="先分析角色之前经历的事情，以及她当前的情绪状态。"></textarea>
+        </label>
+        <label>
+            <span>Content Prefill</span>
+            <textarea id="tpa_manual_content" rows="4" placeholder="她沉默了一会儿，"></textarea>
+        </label>
+        <div class="tpa-warn hidden" id="tpa_manual_warn"></div>
+    </div>
+
+    <div id="tpa_custom_section" class="tpa-panel">
+        <div class="tpa-subheader">Custom Adapter</div>
+        <label>
+            <span>Custom Profile</span>
+            <select id="tpa_custom_profile_select"></select>
+        </label>
+        <div class="tpa-btn-row">
+            <button id="tpa_profile_new" class="tpa-btn">New</button>
+            <button id="tpa_profile_save" class="tpa-btn">Save</button>
+            <button id="tpa_profile_save_as" class="tpa-btn">Save As</button>
+            <button id="tpa_profile_duplicate" class="tpa-btn">Duplicate</button>
+            <button id="tpa_profile_rename" class="tpa-btn">Rename</button>
+            <button id="tpa_profile_delete" class="tpa-btn">Delete</button>
+        </div>
+        <div class="tpa-btn-row">
+            <button id="tpa_profile_import" class="tpa-btn">Import Profile</button>
+            <button id="tpa_profile_export" class="tpa-btn">Export Profile</button>
+        </div>
+        <div class="tpa-grid2">
+            <label>
+                <span>Reasoning Field</span>
+                <input id="tpa_profile_reasoning_field" type="text" />
+            </label>
+            <label>
+                <span>Content Field</span>
+                <input id="tpa_profile_content_field" type="text" />
+            </label>
+        </div>
+        <label>
+            <span>Assistant Fields (JSON)</span>
+            <textarea id="tpa_profile_assistant_fields" rows="3" placeholder='{ "partial": true }'></textarea>
+        </label>
+        <label>
+            <span>Request Fields (JSON)</span>
+            <textarea id="tpa_profile_request_fields" rows="3" placeholder='{ "include_reasoning": true }'></textarea>
+        </label>
+        <div class="tpa-subheader">Capabilities</div>
+        <div id="tpa_profile_capabilities"></div>
+        <div class="tpa-warn hidden" id="tpa_custom_warn"></div>
+    </div>
+
+    <div class="tpa-panel">
+        <div class="tpa-subheader">Advanced</div>
+        <label class="tpa-flex">
+            <input id="tpa_preserve_reasoning" type="checkbox" />
+            <span>Preserve Historical Reasoning</span>
+        </label>
+        <label class="tpa-flex">
+            <input id="tpa_force_thinking" type="checkbox" />
+            <span>Force thinking enabled on prefill requests (include_reasoning)</span>
+        </label>
+        <label class="tpa-flex">
+            <input id="tpa_deepseek_beta" type="checkbox" />
+            <span>Auto-adjust DeepSeek base URL to the /beta endpoint when needed</span>
+        </label>
+        <label class="tpa-flex">
+            <input id="tpa_debug" type="checkbox" />
+            <span>Debug Mode</span>
+        </label>
+    </div>
+</div>

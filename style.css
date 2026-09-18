@@ -1,0 +1,110 @@
+/* Tavern Prefill Adapter — extension settings panel */
+.tpa-settings {
+    --tpa-accent: var(--SmartThemeBlurTintColor, #b3b3ff);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 2px;
+    font-size: 0.95em;
+}
+
+.tpa-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.tpa-header b {
+    font-size: 1.05em;
+}
+
+.tpa-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    border-radius: 8px;
+    padding: 10px;
+    background: rgba(128, 128, 128, 0.05);
+}
+
+.tpa-subheader {
+    font-weight: 600;
+    margin-top: 2px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.tpa-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+@media (max-width: 750px) {
+    .tpa-grid2 { grid-template-columns: 1fr; }
+}
+
+.tpa-settings label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.tpa-settings label.tpa-flex {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+.tpa-settings label span {
+    opacity: 0.85;
+}
+
+.tpa-settings input[type="text"],
+.tpa-settings textarea,
+.tpa-settings select {
+    width: 100%;
+}
+
+.tpa-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.tpa-btn {
+    flex: 1 1 auto;
+    min-width: 80px;
+    padding: 4px 8px;
+}
+
+.tpa-muted {
+    opacity: 0.65;
+    font-size: 0.85em;
+}
+
+.tpa-warn {
+    border: 1px solid rgba(255, 170, 60, 0.6);
+    background: rgba(255, 170, 60, 0.12);
+    color: #f5b25d;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 0.85em;
+    white-space: pre-line;
+}
+
+.tpa-cap-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+}
+.tpa-cap-row input { margin: 0; }
+.tpa-cap-row .tpa-cap-label { flex: 1 1 auto; }
+.tpa-cap-row .tpa-cap-badge {
+    font-size: 0.72em;
+    opacity: 0.8;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(128,128,128,0.15);
+}
+
+.tpa-dirty-star { color: var(--dangerColor, #f04b4b); font-weight: 700; }
+
+.hidden { display: none !important; }

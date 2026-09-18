@@ -1,0 +1,13 @@
+{
+  "name": "tavern-prefill-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SillyTavern extension: unified assistant/reasoning prefill translation per provider.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

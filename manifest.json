@@ -1,0 +1,18 @@
+{
+    "display_name": "Tavern Prefill Adapter",
+    "version": "0.1.0",
+    "loading_order": 50,
+    "js": "index.js",
+    "css": "style.css",
+    "author": "TavernPrefillAdapter contributors",
+    "homePage": "https://github.com/tavern-prefill-adapter/TavernPrefillAdapter",
+    "auto_update": false,
+    "minimum_client_version": "1.12.0",
+    "description": "Unified assistant prefill / reasoning prefill translation for different LLM providers (Ollama, Moonshot/Kimi, DeepSeek, generic OpenAI-compatible, custom).",
+    "hooks": {
+        "activate": "onActivate",
+        "enable": "onEnable",
+        "disable": "onDisable",
+        "clean": "onClean"
+    }
+}
