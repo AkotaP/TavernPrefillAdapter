@@ -22,22 +22,15 @@
  *     NOT guaranteed (it may merely treat it as history context), so the
  *     reasoning-continuation capability is marked experimental.
  *
- * Thinking models (qwen3, deepseek-r1, gemma4, ...) are model-dependent:
- * capability declarations below relax for known thinking families.
+ * Reasoning prefill is ON BY DEFAULT for every model. We deliberately do NOT
+ * match model ids to decide support: model families change too quickly and a
+ * non-thinking model that simply ignores the `reasoning` field degrades
+ * gracefully (the field is treated as plain context) rather than failing the
+ * request. If the provider rejects the field, the request fails open and the
+ * log entry below tells the user what happened.
  */
 
 import { BaseAdapter } from './base-adapter.js';
-
-const THINKING_MODEL_HINTS = [
-    /qwen3/i,
-    /deepseek-r1/i,
-    /deepseek-r1/i,
-    /gemma4/i,
-    /gpt-oss/i,
-    /thinking/i,
-    /reasoning/i,
-    /think/i,
-];
 
 export class OllamaAdapter extends BaseAdapter {
     constructor() {
@@ -50,20 +43,13 @@ export class OllamaAdapter extends BaseAdapter {
         return detection?.provider === 'ollama';
     }
 
-    isThinkingModel(detection) {
-        const model = String(detection?.model || '');
-        return THINKING_MODEL_HINTS.some((re) => re.test(model));
-    }
-
     getCapabilities(detection) {
         return this.normalizeCapabilities({
             supportsContentPrefill: true,
-            // Reasoning prefill works with thinking-capable models; for plain
-            // chat models the field may be ignored or rejected → model-gated.
-            supportsReasoningPrefill: this.isThinkingModel(detection),
-            supportsCombinedPrefill: this.isThinkingModel(detection),
+            supportsReasoningPrefill: true,
+            supportsCombinedPrefill: true,
             supportsReasoningContinuation: false,
-            reasoningContinuationExperimental: this.isThinkingModel(detection),
+            reasoningContinuationExperimental: true,
             supportsToolsWithPrefill: false,
             supportsStructuredOutputWithPrefill: false,
         });
@@ -77,7 +63,6 @@ export class OllamaAdapter extends BaseAdapter {
     }
 
     transformRequest(request, prefill, detection, options = {}) {
-        const caps = this.getCapabilities(detection);
         const warnings = [];
 
         // Only act when the user expressed reasoning intent. Plain content
@@ -89,15 +74,6 @@ export class OllamaAdapter extends BaseAdapter {
                 skippedReason: 'Plain content prefill needs no Ollama-specific transformation.',
                 warnings,
             };
-        }
-
-        if (mode === 'reasoning') {
-            if (!caps.supportsReasoningPrefill && !caps.supportsReasoningContinuation) {
-                return { applied: false, skippedReason: 'Reasoning prefill is not supported for this model.', warnings };
-            }
-        }
-        if (mode === 'both' && !caps.supportsCombinedPrefill) {
-            return { applied: false, skippedReason: 'Combined prefill is not supported for this model.', warnings };
         }
 
         const last = request.messages?.[request.messages.length - 1];
@@ -118,6 +94,19 @@ export class OllamaAdapter extends BaseAdapter {
         delete transformed.prefix;
 
         request.messages[request.messages.length - 1] = transformed;
+
+        // Informational log: the provider may ignore `reasoning` on models
+        // without native thinking support (graceful degradation) or reject it
+        // (fail open — the original request semantics are already applied).
+        const log = options.logger;
+        if (log?.debug) {
+            log.debug(
+                'Ollama reasoning prefill applied. The `reasoning` field maps to native thinking; on models without thinking support it may be ignored or rejected (see provider response).',
+                { model: String(detection?.model || '') },
+            );
+        } else {
+            warnings.push('Ollama reasoning prefill applied; models without native thinking support may ignore the reasoning field.');
+        }
 
         if (mode === 'reasoning') {
             warnings.push('Ollama reasoning-only prefill: the model may continue from the reasoning tail or merely treat it as context (experimental).');

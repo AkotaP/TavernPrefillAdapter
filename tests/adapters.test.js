@@ -45,20 +45,22 @@ test('Ollama: content-only prefill needs no transformation', () => {
     assert.equal(req.messages.at(-1).content, 'prefill');
 });
 
-test('Ollama: reasoning-only prefill for a thinking model', () => {
+test('Ollama: reasoning-only prefill is applied regardless of model id', () => {
     const adapter = new OllamaAdapter();
     const req = makeRequest();
-    const res = adapter.transformRequest(req, REASON_ONLY, { provider: 'ollama', model: 'deepseek-r1:32b' }, {});
+    const res = adapter.transformRequest(req, REASON_ONLY, { provider: 'ollama', model: 'local-custom-70b' }, {});
     assert.equal(res.applied, true);
     assert.deepEqual({ reasoning: req.messages.at(-1).reasoning, content: req.messages.at(-1).content }, { reasoning: 'AAA', content: '' });
+    // Informational note about thinking support is surfaced either via logger or warnings
+    assert.ok(res.warnings.some((w) => /reasoning-only prefill/i.test(w)));
 });
 
-test('Ollama: reasoning prefill skipped for non-thinking models', () => {
+test('Ollama: defaults are enabled for any model (no model-name gating)', () => {
     const adapter = new OllamaAdapter();
-    const req = makeRequest();
-    const res = adapter.transformRequest(req, REASON_ONLY, { provider: 'ollama', model: 'llama3' }, {});
-    assert.equal(res.applied, false);
-    assert.match(res.skippedReason || '', /not supported/i);
+    const caps = adapter.getCapabilities({ provider: 'ollama', model: 'llama3' });
+    assert.equal(caps.supportsReasoningPrefill, true);
+    assert.equal(caps.supportsCombinedPrefill, true);
+    assert.equal(caps.reasoningContinuationExperimental, true);
 });
 
 test('Ollama: validation skips when tools are present', () => {

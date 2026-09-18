@@ -106,7 +106,8 @@ assistant 消息，表达“assistant 正文已经开始，从这里继续生成
 1. 打开 **Extensions** 面板，展开 **Tavern Prefill Adapter**。
 2. 勾选 **Enable**。
 3. 选择 **Provider**：
-   - `Auto Detect`：优先使用你在设置里的显式选择（无则按 Base URL → Chat Source → Model ID 顺序自动检测）；
+   - `Auto Detect`：优先使用你在设置里的显式选择，无显式选择时按 Base URL → Chat Source 顺序检测；
+     模型名不参与检测（同名模型可能来自官方 API、OpenRouter、中转或 Ollama，不可靠）。
    - 或直接指定 `Ollama` / `Moonshot / Kimi` / `DeepSeek Official` / `Generic OpenAI` / `Custom`。
 4. 选择 **Mode**：`Auto` 或 `Manual`。
 5. 其余设置按需调整（见下）。
@@ -255,7 +256,7 @@ Profile 含 `version` 字段；插件后续升级通过 `migrateProfile()` 提�
 
 | Provider | Content | Reasoning | Combined | Reason Continue | 备注 |
 | --- | --- | --- | --- | --- | --- |
-| Ollama（本地 / 云 / OpenAI 兼容） | Yes | 模型相关（thinking 模型 Yes） | 模型相关 | 实验性 | `reasoning` 字段 ↔ 原生 thinking |
+| Ollama（本地 / 云 / OpenAI 兼容） | Yes | Yes（默认开启） | Yes（默认开启） | 实验性 | `reasoning` 字段 ↔ 原生 thinking；不按模型名判断 |
 | Moonshot / Kimi | Yes | Yes | Yes | 实验性（空 content 可能重新开始生成） | `reasoning_content` + `partial: true`，思考续接需回传 `reasoning_content` |
 | DeepSeek Official | Yes | Yes | Yes | 实验性 | `reasoning_content` + `prefix: true`，需 /beta 端点 |
 | Generic OpenAI | Yes | No | No | No | 只保证 content prefill，reasoning 视为不支持 |
@@ -263,8 +264,10 @@ Profile 含 `version` 字段；插件后续升级通过 `migrateProfile()` 提�
 
 - **Ollama**：适配器检测 Custom source 的 Base URL（`localhost:11434` / `127.0.0.1:11434` /
   `ollama.com`）或手动选择 Ollama；把 reasoning 预填充写入 assistant 消息 `reasoning` 字段
-  （Ollama 服务端将其映射为原生 thinking）。非 thinking 模型（如 llama3）上 reasoning 预填充会被
-  跳过；续思考标记为“实验性”（模型可能把 reasoning 仅当作历史上下文）。
+  （Ollama 服务端将其映射为原生 thinking）。**默认开启**，刻意不做模型名匹配（模型迭代太快，
+  名字不可靠）；无 thinking 支持的模型通常会忽略该字段（自然降级），若 Provider 拒绝则请求
+  失败并保持 Fail Open，发送时 Debug 日志会提示。续思考标记为“实验性”（模型可能把 reasoning
+  仅当作历史上下文）。
 - **Moonshot / Kimi**：直接 Moonshot source、或任何支持 Partial Mode 的网关 / OpenRouter
   （模型名含 kimi/moonshot 的弱提示可自动路由到 Moonshot 适配器，可被手动选择覆盖）。Kimi K3 的
   thinking 模式要求回传 `reasoning_content`，通过「Advanced → Preserve Historical Reasoning」

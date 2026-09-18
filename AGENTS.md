@@ -52,7 +52,7 @@ SillyTavern Prefill 输入 → Prefill Parser → 统一 Prefill Model → Provi
 
 | Provider | 消息字段 | 请求级 | 备注 |
 | --- | --- | --- | --- |
-| Ollama | `reasoning`（↔ 原生 thinking） | — | thinking 模型才支持 reasoning prefill；续思考实验性 |
+| Ollama | `reasoning`（↔ 原生 thinking） | — | reasoning prefill 默认开启；**禁止用模型名判断能力**（模型迭代快）；续思考实验性 |
 | Moonshot/Kimi | `reasoning_content` + `partial: true` | `include_reasoning` | 思考续接需回传 `reasoning_content` |
 | DeepSeek | `reasoning_content` + `prefix: true`（Beta） | `include_reasoning` / `thinking` | 需 `api.deepseek.com/beta`；默认只警告不静默改 URL |
 | Generic OpenAI | 仅 `content` | — | 绝不发明 reasoning 字段 |
@@ -60,7 +60,7 @@ SillyTavern Prefill 输入 → Prefill Parser → 统一 Prefill Model → Provi
 
 ## 版本与发布
 
-- 版本号**双维护**：`manifest.json` 与 `package.json` 的 `version` 必须一致（当前 `0.1.0`）。
+- 版本号**双维护**：`manifest.json` 与 `package.json` 的 `version` 必须一致（当前 `0.2.1`，以 manifest 为准）。
 - **安装方式（当前 ST release）**：Install extension 填 GitHub 公开仓库 URL，服务端
   `git clone` 到 `data/<user>/extensions/<repo名>`，要求仓库**根目录**有合法
   `manifest.json`（本项目满足）。仓库必须是 public。
@@ -82,6 +82,8 @@ npm test          # 全部单元测试（node --test，无需 SillyTavern）
 - 当前 ST release 主流程的 Start Reply With 只对 Claude source 生效，因此 Auto 模式采用
   “尾部 assistant 消息 = 当前 prefill”的保守启发式（`normal/regenerate/swipe`；`continue`
   需以 Reasoning Start Tag 开头）。
+- **能力判断禁止依赖模型名**：adapter 的能力声明 / provider 检测一律不读模型 id 做匹配；
+  reasoning 预填充默认开启，失败靠 Fail Open + Debug 日志兜底。
 - reasoning-only（续思考）为实验性：Ollama 原生与 Kimi 官方文档均确认空 content 时行为不保证。
 - 纯 content prefill（无 thinking 标签）在 Auto 模式下不做 Provider 翻译（保持原样最安全）。
 - 第一版只做 Outgoing 请求翻译；不处理响应解析（Response Adapter 架构预留未实现）。

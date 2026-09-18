@@ -68,22 +68,21 @@ test('Manual provider override beats everything', () => {
     assert.equal(res.via, 'setting');
 });
 
-test('Model id is only a weak hint (kimi on openrouter)', () => {
+test('model ids are never used to decide the provider (kimi on openrouter -> generic)', () => {
     const res = detectProvider({ chatCompletionSource: 'openrouter', model: 'moonshotai/kimi-k3' });
-    assert.equal(res.provider, PROVIDERS.MOONSHOT);
-    assert.equal(res.via, 'model');
+    assert.equal(res.provider, PROVIDERS.GENERIC);
+    assert.equal(res.via, 'default');
 });
 
-test('Model id hint does not override base URL', () => {
+test('base URL still wins over any model id', () => {
     const res = detectProvider({ chatCompletionSource: 'openrouter', customUrl: 'https://ollama.com/v1', model: 'kimi-k3' });
     assert.equal(res.provider, PROVIDERS.OLLAMA);
     assert.equal(res.via, 'url');
 });
 
-test('deepseek model id hint works only without stronger signals', () => {
+test('deepseek-looking model id on a custom source is NOT enough to detect DeepSeek', () => {
     const res = detectProvider({ chatCompletionSource: 'custom', model: 'deepseek-v4' });
-    assert.equal(res.provider, PROVIDERS.DEEPSEEK);
-    assert.equal(res.via, 'model');
+    assert.equal(res.provider, PROVIDERS.GENERIC);
 });
 
 test('generic fallback for unknown source', () => {
