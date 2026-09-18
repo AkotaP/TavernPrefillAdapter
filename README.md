@@ -303,7 +303,11 @@ Skipped: tools are active and the current adapter does not support prefill with 
 
 ## Debug 方法
 
-勾选 **Advanced → Debug Mode** 后，控制台输出（示例）：
+勾选 **Advanced → Debug Mode** 后：
+
+- **酒馆界面内**：扩展设置面板底部出现 **Debug Log** 区域，插件日志实时显示（自动脱敏，
+  最多 300 行，可一键 Clear；警告与错误即使不开 Debug 也会记录）。无需浏览器控制台。
+- **浏览器控制台**（F12）同步输出（示例）：
 
 ```
 [Tavern Prefill Adapter] Provider: ollama | via: url | Mode: auto | Adapter: OllamaAdapter | Capabilities: content:yes reasoning:yes combined:yes continue:no* tools:no structured:no | Intent: both

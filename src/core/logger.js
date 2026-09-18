@@ -5,6 +5,10 @@
  * API keys, bearer tokens, cookies, secrets — or raw request bodies that may
  * contain them (e.g. custom_url can embed credentials). Everything logged
  * goes through redact() first.
+ *
+ * Besides console output, the logger keeps an in-memory ring buffer and can
+ * push formatted, redacted entries to UI subscribers, so debug logs are also
+ * visible inside the SillyTavern settings panel (no browser console needed).
  */
 
 export const SENSITIVE_KEYS = new Set([
@@ -69,14 +73,28 @@ export function redact(value, seen = new WeakSet()) {
     }
 }
 
+/**
+ * @typedef {object} LogEntry
+ * @property {'debug'|'warn'|'error'} level
+ * @property {string} time  Locale time string
+ * @property {string} text  Formatted, redacted single-line text
+ */
+
 export class Logger {
     /**
      * @param {() => boolean} isEnabled
      * @param {...string} prefix
+     * @param {object} [options]
+     * @param {number} [options.maxBuffer=500] Ring buffer size for the in-panel log
      */
-    constructor(isEnabled, prefix = '[Tavern Prefill Adapter]') {
+    constructor(isEnabled, prefix = '[Tavern Prefill Adapter]', { maxBuffer = 500 } = {}) {
         this.isEnabled = isEnabled;
         this.prefix = prefix;
+        this.maxBuffer = maxBuffer;
+        /** @type {LogEntry[]} */
+        this.buffer = [];
+        /** @type {Set<(entry: LogEntry) => void>} */
+        this.subscribers = new Set();
     }
 
     enabled() {
@@ -91,22 +109,89 @@ export class Logger {
         if (!this.enabled()) return;
         // eslint-disable-next-line no-console
         console.log(this.prefix, ...args);
+        this.push('debug', args);
     }
 
     warn(...args) {
         // eslint-disable-next-line no-console
         console.warn(this.prefix, ...args);
+        this.push('warn', args);
     }
 
     error(...args) {
         // eslint-disable-next-line no-console
         console.error(this.prefix, ...args);
+        this.push('error', args);
     }
 
     debugSafe(label, value) {
-        if (!this.enabled()) return;
-        // eslint-disable-next-line no-console
-        console.log(this.prefix, label, safeStringify(value));
+        this.debug(label, safeStringify(value));
+    }
+
+    // ------------------------------------------------------------------
+    // In-panel log support (ring buffer + subscribers)
+    // ------------------------------------------------------------------
+
+    /**
+     * Subscribes to new log entries (called for debug entries only when debug
+     * mode is enabled; warn/error always arrive). Returns an unsubscribe fn.
+     * @param {(entry: LogEntry) => void} listener
+     * @returns {() => void}
+     */
+    subscribe(listener) {
+        this.subscribers.add(listener);
+        return () => this.subscribers.delete(listener);
+    }
+
+    /** @returns {LogEntry[]} Snapshot of the current ring buffer. */
+    getBuffer() {
+        return this.buffer.slice();
+    }
+
+    /** Clears the in-panel log buffer. */
+    clear() {
+        this.buffer = [];
+    }
+
+    push(level, args) {
+        const entry = {
+            level,
+            time: new Date().toLocaleTimeString([], { hour12: false }),
+            text: this.formatArgs(args),
+        };
+        this.buffer.push(entry);
+        if (this.buffer.length > this.maxBuffer) {
+            this.buffer.splice(0, this.buffer.length - this.maxBuffer);
+        }
+        for (const listener of this.subscribers) {
+            try {
+                listener(entry);
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.error('[Tavern Prefill Adapter] Log subscriber error:', error);
+            }
+        }
+        return entry;
+    }
+
+    /**
+     * Formats log arguments into a single redacted line: strings pass through,
+     * objects are JSON-stringified through redact().
+     */
+    formatArgs(args) {
+        return args.map((arg) => {
+            if (typeof arg === 'string') return arg;
+            if (arg === undefined) return 'undefined';
+            if (arg === null) return 'null';
+            if (typeof arg === 'object') {
+                try {
+                    return JSON.stringify(redact(arg));
+                } catch {
+                    return String(arg);
+                }
+            }
+            return String(arg);
+        }).join(' ');
     }
 }
 

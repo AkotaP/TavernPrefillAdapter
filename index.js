@@ -152,6 +152,44 @@ jQuery(async () => {
     const profileEditor = new ProfileEditor({ profileManager, logger });
     profileEditor.mount(uiRoot);
 
+    // ------------------------------------------------------------------
+    // In-panel debug log viewer (visible inside the ST settings panel)
+    // ------------------------------------------------------------------
+    const logView = uiRoot.find('#tpa_log_view');
+    const logPanel = uiRoot.find('#tpa_log_panel');
+    const MAX_UI_LOG_LINES = 300;
+
+    const renderLogVisibility = () => {
+        logPanel.toggle(Boolean(settingsManager.get('debug')));
+    };
+
+    const appendLogEntry = (entry) => {
+        if (!logPanel.is(':visible') || !logView.length) {
+            return;
+        }
+        const line = $('<div class="tpa-log-line"></div>').addClass('tpa-log-' + entry.level);
+        $('<span class="tpa-log-time"></span>').text(entry.time).appendTo(line);
+        // text() escapes HTML — log lines are never injected as markup.
+        $('<span class="tpa-log-text"></span>').text(entry.text).appendTo(line);
+        logView.append(line);
+        while (logView.children().length > MAX_UI_LOG_LINES) {
+            logView.children().first().remove();
+        }
+        logView[0].scrollTop = logView[0].scrollHeight;
+    };
+
+    logger.subscribe(appendLogEntry);
+    settingsManager.subscribe(renderLogVisibility);
+    uiRoot.find('#tpa_log_clear').on('click', () => {
+        logger.clear();
+        logView.empty();
+    });
+    renderLogVisibility();
+    // Re-render buffered warn/error entries that arrived before the UI mounted.
+    for (const entry of logger.getBuffer()) {
+        appendLogEntry(entry);
+    }
+
     const context = SillyTavern.getContext();
     const { eventSource, event_types } = context;
 

@@ -107,4 +107,47 @@
 
 .tpa-dirty-star { color: var(--dangerColor, #f04b4b); font-weight: 700; }
 
+/* In-panel debug log viewer */
+.tpa-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.tpa-log-header .tpa-subheader {
+    margin: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.tpa-log-header .tpa-btn {
+    flex: 0 0 auto;
+    min-width: 60px;
+}
+.tpa-log-view {
+    max-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: var(--monoFontFamily, Consolas, monospace);
+    font-size: 0.78em;
+    line-height: 1.4;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    border-radius: 6px;
+    padding: 6px 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.tpa-log-line {
+    display: flex;
+    gap: 6px;
+    padding: 1px 0;
+}
+.tpa-log-time {
+    flex: 0 0 auto;
+    opacity: 0.6;
+}
+.tpa-log-debug .tpa-log-text { color: #9fd3ff; }
+.tpa-log-warn .tpa-log-text { color: #ffd479; }
+.tpa-log-error .tpa-log-text { color: #ff8f8f; }
+
 .hidden { display: none !important; }
