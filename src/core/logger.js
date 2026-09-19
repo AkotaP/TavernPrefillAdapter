@@ -115,13 +115,19 @@ export class Logger {
     warn(...args) {
         // eslint-disable-next-line no-console
         console.warn(this.prefix, ...args);
-        this.push('warn', args);
+        // In-panel collection is debug-gated: with Debug Mode off nothing is
+        // cached or pushed to the panel (warn/error still reach the console).
+        if (this.enabled()) {
+            this.push('warn', args);
+        }
     }
 
     error(...args) {
         // eslint-disable-next-line no-console
         console.error(this.prefix, ...args);
-        this.push('error', args);
+        if (this.enabled()) {
+            this.push('error', args);
+        }
     }
 
     debugSafe(label, value) {
@@ -133,8 +139,9 @@ export class Logger {
     // ------------------------------------------------------------------
 
     /**
-     * Subscribes to new log entries (called for debug entries only when debug
-     * mode is enabled; warn/error always arrive). Returns an unsubscribe fn.
+     * Subscribes to new log entries. Entries are only produced while debug
+     * mode is enabled (all levels); with Debug Mode off nothing is cached or
+     * delivered. Returns an unsubscribe fn.
      * @param {(entry: LogEntry) => void} listener
      * @returns {() => void}
      */

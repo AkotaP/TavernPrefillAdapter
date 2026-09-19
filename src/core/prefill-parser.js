@@ -15,15 +15,15 @@
  *   <endTag>
  *   <content prefill text>
  *
- * Examples with the default tags (*thinking* / *response*):
+ * Examples with the default tags (<think> / <content>):
  *
  *   "她轻轻推开门，"                                  -> { reasoning:'', content:'她轻轻推开门，' }
- *   "*thinking*\n先分析当前人物状态……"                -> { reasoning:'先分析当前人物状态……', content:'' }
- *   "*thinking*\n分析……\n*response*\n她犹豫了一下，"   -> { reasoning:'分析……', content:'她犹豫了一下，' }
+ *   "<think>\n先分析当前人物状态……"                -> { reasoning:'先分析当前人物状态……', content:'' }
+ *   "<think>\n分析……\n<content>\n她犹豫了一下，"   -> { reasoning:'分析……', content:'她犹豫了一下，' }
  */
 
-export const DEFAULT_START_TAG = '*thinking*';
-export const DEFAULT_END_TAG = '*response*';
+export const DEFAULT_START_TAG = '<think>';
+export const DEFAULT_END_TAG = '<content>';
 
 /**
  * @typedef {object} ParsedPrefill
@@ -51,8 +51,8 @@ export const DEFAULT_END_TAG = '*response*';
  *
  * @param {string} text Raw reply prefix content
  * @param {object} [options]
- * @param {string} [options.startTag='*thinking*'] Reasoning start tag
- * @param {string} [options.endTag='*response*']   Reasoning end tag
+ * @param {string} [options.startTag='<think>'] Reasoning start tag
+ * @param {string} [options.endTag='<content>']   Reasoning end tag
  * @returns {ParsedPrefill|null}
  */
 export function parsePrefill(text, { startTag = DEFAULT_START_TAG, endTag = DEFAULT_END_TAG } = {}) {

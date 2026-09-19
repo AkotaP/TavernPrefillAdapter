@@ -53,7 +53,7 @@
                 <input id="tpa_reasoning_end_tag" type="text" />
             </label>
         </div>
-        <div class="tpa-muted" data-i18n="tpa_auto_hint">Auto 模式解析“Start Reply With”生成的回复前缀；示例：<code>*thinking*</code> 开头表示思考预填充，<code>*response*</code> 之后是正文预填充。</div>
+        <div class="tpa-muted" data-i18n="tpa_auto_hint">Auto 模式解析“Start Reply With”生成的回复前缀；示例：<code><think></code> 开头表示思考预填充，<code><content></code> 之后是正文预填充。</div>
     </div>
 
     <div id="tpa_manual_section" class="tpa-panel">
@@ -135,7 +135,7 @@
             <div class="tpa-subheader">Debug Log</div>
             <button id="tpa_log_clear" class="tpa-btn">Clear</button>
         </div>
-        <div class="tpa-muted">显示最近 500 条插件日志（自动脱敏）。详细调试信息在开启 Debug Mode 后出现；警告与错误始终记录。</div>
+        <div class="tpa-muted">开启 Debug Mode 后显示插件日志（自动脱敏，最多 500 条）；关闭时不记录任何日志，控制台仍保留 warn/error 输出。</div>
         <div id="tpa_log_view" class="tpa-log-view"></div>
     </div>
 </div>

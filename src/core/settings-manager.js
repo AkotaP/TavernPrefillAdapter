@@ -24,8 +24,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     mode: 'auto',
 
     // Auto parsing tags.
-    reasoningStartTag: '*thinking*',
-    reasoningEndTag: '*response*',
+    reasoningStartTag: '<think>',
+    reasoningEndTag: '<content>',
 
     // Manual mode prefills.
     manualReasoning: '',

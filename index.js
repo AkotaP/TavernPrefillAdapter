@@ -157,37 +157,67 @@ jQuery(async () => {
     // ------------------------------------------------------------------
     const logView = uiRoot.find('#tpa_log_view');
     const logPanel = uiRoot.find('#tpa_log_panel');
+    const logDrawer = uiRoot.closest('.inline-drawer');
     const MAX_UI_LOG_LINES = 300;
 
-    const renderLogVisibility = () => {
-        logPanel.toggle(Boolean(settingsManager.get('debug')));
-    };
-
-    const appendLogEntry = (entry) => {
-        if (!logPanel.is(':visible') || !logView.length) {
-            return;
-        }
+    // Renders every buffered entry into the log view. Safe to call while the
+    // drawer is collapsed (the container is simply display:none).
+    const renderLogLine = (entry) => {
         const line = $('<div class="tpa-log-line"></div>').addClass('tpa-log-' + entry.level);
         $('<span class="tpa-log-time"></span>').text(entry.time).appendTo(line);
         // text() escapes HTML — log lines are never injected as markup.
         $('<span class="tpa-log-text"></span>').text(entry.text).appendTo(line);
         logView.append(line);
-        while (logView.children().length > MAX_UI_LOG_LINES) {
-            logView.children().first().remove();
+    };
+
+    const renderLogBuffer = () => {
+        if (!logView.length) return;
+        logView.empty();
+        const entries = logger.getBuffer().slice(-MAX_UI_LOG_LINES);
+        for (const entry of entries) {
+            renderLogLine(entry);
         }
         logView[0].scrollTop = logView[0].scrollHeight;
     };
 
-    logger.subscribe(appendLogEntry);
+    const renderLogVisibility = () => {
+        logPanel.toggle(Boolean(settingsManager.get('debug')));
+        if (settingsManager.get('debug')) {
+            renderLogBuffer();
+        }
+    };
+
+    logger.subscribe((entry) => {
+        // Live path: only render while the panel is actually visible; the
+        // buffer always keeps the entry, and renderLogBuffer() recovers it
+        // whenever the panel becomes visible again.
+        if (!logPanel.is(':visible') || !logView.length) {
+            return;
+        }
+        renderLogLine(entry);
+        while (logView.children().length > MAX_UI_LOG_LINES) {
+            logView.children().first().remove();
+        }
+        logView[0].scrollTop = logView[0].scrollHeight;
+    });
     settingsManager.subscribe(renderLogVisibility);
+    // ST fires 'inline-drawer-toggle' when the settings drawer is expanded /
+    // collapsed — re-render the full buffer so history appears after expanding.
+    if (logDrawer.length) {
+        logDrawer.on('inline-drawer-toggle', () => {
+            if (settingsManager.get('debug')) {
+                renderLogBuffer();
+            }
+        });
+    }
     uiRoot.find('#tpa_log_clear').on('click', () => {
         logger.clear();
         logView.empty();
     });
     renderLogVisibility();
-    // Re-render buffered warn/error entries that arrived before the UI mounted.
-    for (const entry of logger.getBuffer()) {
-        appendLogEntry(entry);
+    // Initial render of buffered entries that arrived before the UI mounted.
+    if (settingsManager.get('debug')) {
+        renderLogBuffer();
     }
 
     const context = SillyTavern.getContext();

@@ -9,17 +9,17 @@ test('plain content prefill (Case A)', () => {
 });
 
 test('unclosed reasoning prefill (Case B)', () => {
-    const res = parsePrefill('*thinking*\n先分析当前人物状态……');
+    const res = parsePrefill('<think>\n先分析当前人物状态……');
     assert.deepEqual(res, { reasoning: '先分析当前人物状态……', content: '', mode: 'reasoning', matched: true });
 });
 
 test('reasoning + content prefill (Case C)', () => {
-    const res = parsePrefill('*thinking*\n先分析一下\n*response*\n正文开始');
+    const res = parsePrefill('<think>\n先分析一下\n<content>\n正文开始');
     assert.deepEqual(res, { reasoning: '先分析一下', content: '正文开始', mode: 'both', matched: true });
 });
 
 test('reasoning + content with blank line after end tag', () => {
-    const res = parsePrefill('*thinking*\n先分析人物当前状态……\n*response*\n\n她犹豫了一下，');
+    const res = parsePrefill('<think>\n先分析人物当前状态……\n<content>\n\n她犹豫了一下，');
     assert.deepEqual(res, { reasoning: '先分析人物当前状态……', content: '她犹豫了一下，', mode: 'both', matched: true });
 });
 
@@ -37,44 +37,44 @@ test('custom tags, unclosed scratchpad', () => {
 });
 
 test('CRLF line endings are normalized', () => {
-    const res = parsePrefill('*thinking*\r\n先分析一下\r\n*response*\r\n正文开始');
+    const res = parsePrefill('<think>\r\n先分析一下\r\n<content>\r\n正文开始');
     assert.deepEqual(res, { reasoning: '先分析一下', content: '正文开始', mode: 'both', matched: true });
 });
 
 test('leading whitespace before the tag is ignored', () => {
-    const res = parsePrefill('  \n  *thinking*\n先分析一下');
+    const res = parsePrefill('  \n  <think>\n先分析一下');
     assert.deepEqual(res, { reasoning: '先分析一下', content: '', mode: 'reasoning', matched: true });
 });
 
 test('internal whitespace in reasoning is preserved', () => {
-    const res = parsePrefill('*thinking*\n第一行\n  第二行缩进\n*response*\n内容');
+    const res = parsePrefill('<think>\n第一行\n  第二行缩进\n<content>\n内容');
     assert.deepEqual(res, { reasoning: '第一行\n  第二行缩进', content: '内容', mode: 'both', matched: true });
 });
 
 test('empty reasoning with content is a content prefill', () => {
-    const res = parsePrefill('*thinking*\n*response*\n正文开始');
+    const res = parsePrefill('<think>\n<content>\n正文开始');
     assert.equal(res.mode, 'content');
     assert.equal(res.reasoning, '');
     assert.equal(res.content, '正文开始');
 });
 
 test('empty content with reasoning is a reasoning prefill', () => {
-    const res = parsePrefill('*thinking*\n先分析一下*response*');
+    const res = parsePrefill('<think>\n先分析一下<content>');
     assert.equal(res.mode, 'reasoning');
     assert.equal(res.reasoning, '先分析一下');
     assert.equal(res.content, '');
 });
 
 test('end tag without start tag is NOT a reasoning block', () => {
-    const res = parsePrefill('*response* 结尾而已');
+    const res = parsePrefill('<content> 结尾而已');
     assert.equal(res.matched, false);
     assert.equal(res.mode, 'content');
-    assert.equal(res.content, '*response* 结尾而已');
+    assert.equal(res.content, '<content> 结尾而已');
 });
 
 test('tag-only input fails open (null)', () => {
-    assert.equal(parsePrefill('*thinking*'), null);
-    assert.equal(parsePrefill('*thinking*\n*response*'), null);
+    assert.equal(parsePrefill('<think>'), null);
+    assert.equal(parsePrefill('<think>\n<content>'), null);
 });
 
 test('degenerate inputs fail open (null)', () => {
@@ -91,9 +91,9 @@ test('non-matching plain content keeps the original text intact', () => {
 });
 
 test('hasReasoningStartTag', () => {
-    assert.equal(hasReasoningStartTag('*thinking*\nxx'), true);
-    assert.equal(hasReasoningStartTag('   *thinking*xx'), true);
-    assert.equal(hasReasoningStartTag('随便说说 *thinking*'), false);
+    assert.equal(hasReasoningStartTag('<think>\nxx'), true);
+    assert.equal(hasReasoningStartTag('   <think>xx'), true);
+    assert.equal(hasReasoningStartTag('随便说说 <think>'), false);
     assert.equal(hasReasoningStartTag('<s>', { startTag: '<s>' }), true);
     assert.equal(hasReasoningStartTag(''), false);
 });

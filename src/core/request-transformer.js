@@ -62,15 +62,21 @@ export function transformChatCompletionRequest(generateData, context = {}) {
 
     try {
         if (!generateData || typeof generateData !== 'object' || !Array.isArray(generateData.messages) || generateData.messages.length === 0) {
+            logger.debug('Skipped: no usable generate_data payload.');
             return { changed: false, skipped: 'No usable generate_data payload.' };
         }
 
         if (PROCESSED.has(generateData)) {
+            logger.debug('Skipped: request already processed by this plugin.');
             return { changed: false, skipped: 'Request already processed by this plugin.' };
         }
 
         const settings = context.settings;
         if (!settings || settings.enabled === false) {
+            // Debug-gated: with Debug Mode ON this reveals that the plugin is
+            // alive but disabled (Enable unchecked) — the reason no processing
+            // logs ever appear.
+            logger.debug('Skipped: plugin disabled (Off mode). Enable the extension to process prefills.');
             return { changed: false, skipped: 'Plugin disabled (Off mode).' };
         }
 
@@ -189,6 +195,7 @@ export function transformChatCompletionRequest(generateData, context = {}) {
         const options = {
             forceThinkingEnabled: Boolean(settings.forceThinkingEnabled),
             deepseekAutoBetaEndpoint: Boolean(settings.deepseekAutoBetaEndpoint),
+            logger,
         };
         const result = adapter.transformRequest(workingCopy, {
             reasoning: intent.reasoning,

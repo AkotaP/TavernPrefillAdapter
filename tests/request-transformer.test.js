@@ -34,7 +34,7 @@ test('Auto mode: moonshot trailing tagged prefill is transformed', () => {
         messages: [
             { role: 'system', content: 'sys' },
             { role: 'user', content: 'Hi' },
-            { role: 'assistant', content: '*thinking*\n先分析一下\n*response*\n她犹豫了一下，' },
+            { role: 'assistant', content: '<think>\n先分析一下\n<content>\n她犹豫了一下，' },
         ],
     });
     const out = run(gd, settings.get(), { type: 'normal' });
@@ -71,7 +71,7 @@ test('Auto mode: historical assistant messages with tags are NOT touched', () =>
         messages: [
             { role: 'user', content: 'Hi' },
             // "history" assistant message that mentions the tag mid-text
-            { role: 'assistant', content: 'HTML 里可以使用 *thinking* 标签。' },
+            { role: 'assistant', content: 'HTML 里可以使用 <think> 标签。' },
         ],
     });
     const before = deepClone(gd);
@@ -207,7 +207,7 @@ test('continue with reasoning tag is transformed (continue-prefill compatibility
         chat_completion_source: 'moonshot',
         messages: [
             { role: 'user', content: 'Hi' },
-            { role: 'assistant', content: '*thinking*\n先分析一下' },
+            { role: 'assistant', content: '<think>\n先分析一下' },
         ],
     });
     const out = run(gd, settings.get(), { type: 'continue' });

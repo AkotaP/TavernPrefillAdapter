@@ -126,14 +126,14 @@ Start Reply With / 回复前缀）。
 
 ### 标签语法（默认，均可配置）
 
-- Reasoning Start Tag（默认 `*thinking*`）
-- Reasoning End Tag（默认 `*response*`）
+- Reasoning Start Tag（默认 `<think>`）
+- Reasoning End Tag（默认 `<content>`）
 
 | 输入（Start Reply With 内容） | 解析结果 |
 | --- | --- |
 | `她轻轻推开门，` | `{ reasoning:"", content:"她轻轻推开门，" }` —— 普通 Content Prefill |
-| `*thinking*\n先分析当前人物状态……` | `{ reasoning:"先分析当前人物状态……", content:"" }` —— 未闭合 Reasoning（续思考意图） |
-| `*thinking*\n先分析一下\n*response*\n她犹豫了一下，` | `{ reasoning:"先分析一下", content:"她犹豫了一下，" }` —— Completed Reasoning + Content |
+| `<think>\n先分析当前人物状态……` | `{ reasoning:"先分析当前人物状态……", content:"" }` —— 未闭合 Reasoning（续思考意图） |
+| `<think>\n先分析一下\n<content>\n她犹豫了一下，` | `{ reasoning:"先分析一下", content:"她犹豫了一下，" }` —— Completed Reasoning + Content |
 
 标签可改成任意自定义标签，例如 `<scratchpad>` / `</scratchpad>`（在设置里修改
 Reasoning Start/End Tag）。
@@ -308,8 +308,9 @@ Skipped: tools are active and the current adapter does not support prefill with 
 
 勾选 **Advanced → Debug Mode** 后：
 
-- **酒馆界面内**：扩展设置面板底部出现 **Debug Log** 区域，插件日志实时显示（自动脱敏，
-  最多 300 行，可一键 Clear；警告与错误即使不开 Debug 也会记录）。无需浏览器控制台。
+- **酒馆界面内**：开启 Debug Mode 后，扩展设置面板底部出现 **Debug Log** 区域并实时显示
+  插件日志（自动脱敏，最多 300 行，可一键 Clear）。**关闭 Debug 时不记录**（控制台仍保留
+  warn/error 输出）。无需浏览器控制台。
 - **浏览器控制台**（F12）同步输出（示例）：
 
 ```
@@ -330,16 +331,22 @@ Debug 输出包括：检测到的 Provider / 选中的 Adapter / Capabilities / 
 2. **Reasoning Only 预填充 ≠ 原生续思考**：`reasoning` / `reasoning_content` /
    `prefix` 字段存在不代表 Provider 会把生成光标放在思考尾部。Ollama 原生注释也确认
    “gpt-oss 无法区分继续思考与结束思考输出正文”，因此该能力默认标记为**实验性**。
-3. **Moonshot 空 content**：Kimi 官方文档说明 Partial Mode 的 prefix 为空时可能从零重新生成，
+3. **Ollama OpenAI 兼容端点的 thinking/正文分割可能失效**：某些模型（如 gemma4、
+   部分 deepseek 系）经 `/v1/chat/completions` 输出会被**全部归入 `reasoning` 字段、
+   `content` 为空**（见 ollama/ollama issue #15288），SillyTavern 于是把整段渲染成思维链、
+   正文“隐藏”在思考里；这是 Ollama 响应侧行为，插件无法修正。需要思维链与正文都正常时，
+   建议改用 llama.cpp server（`reasoning_content` 字段，ST 原生渲染）或 DeepSeek 官方 API；
+   Ollama 场景下若只要正文正常，可给 Custom Body 设 `reasoning_effort: none` 关闭 thinking。
+4. **Moonshot 空 content**：Kimi 官方文档说明 Partial Mode 的 prefix 为空时可能从零重新生成，
    所以 reasoning-only prefill 是实验性能力。
-4. **DeepSeek /beta**：prefix completion 需要 `api.deepseek.com/beta`；ST 原生 DeepSeek source
+5. **DeepSeek /beta**：prefix completion 需要 `api.deepseek.com/beta`；ST 原生 DeepSeek source
    已满足。用 Custom 直连时请自行确保 /beta 或开启自动调整设置。
-5. **纯 Content Prefill（无 thinking 标签）在 Auto 模式下不做 Provider 翻译**：尾部 assistant
+6. **纯 Content Prefill（无 thinking 标签）在 Auto 模式下不做 Provider 翻译**：尾部 assistant
    消息本身就是 OpenAI 语义下的 content prefill，插件保持原样（最安全）。Moonshot 上如需
    `partial: true`，请使用 Manual 模式或带 tags 的前缀。
-6. **Tools / Structured Output 冲突时直接跳过 prefill**（不拆分、不冒险），这是参考设计与
+7. **Tools / Structured Output 冲突时直接跳过 prefill**（不拆分、不冒险），这是参考设计与
    KimiThinkingPrefill 一致的保守行为。
-7. **不处理响应解析**：第一版只做 Outgoing Request 翻译；响应侧 `reasoning` /
+8. **不处理响应解析**：第一版只做 Outgoing Request 翻译；响应侧 `reasoning` /
    `reasoning_content` 的展示由 SillyTavern 核心负责。Response Adapter 已在架构上预留
    （新目录加 Adapter 即可），但非本版必选。
 

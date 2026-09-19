@@ -50,16 +50,27 @@ test('safeStringify never throws on weird input', () => {
 // In-panel log ring buffer / subscribers
 // ---------------------------------------------------------------------
 
-test('debug entries only arrive while debug mode is enabled', () => {
+test('with Debug Mode off nothing is cached or delivered to the panel', () => {
     const logger = new Logger(() => false);
     const seen = [];
     logger.subscribe((entry) => seen.push(entry));
     logger.debug('hidden', { api_key: 'x' });
     logger.warn('visible warning');
     logger.error('visible error');
-    assert.equal(seen.length, 2); // warn + error only
-    assert.equal(seen[0].level, 'warn');
-    assert.equal(seen[1].level, 'error');
+    assert.equal(seen.length, 0); // clean: no in-panel collection while off
+    assert.equal(logger.getBuffer().length, 0);
+});
+
+test('with Debug Mode on every level is cached and delivered', () => {
+    const logger = new Logger(() => true);
+    const seen = [];
+    logger.subscribe((entry) => seen.push(entry));
+    logger.warn('w');
+    logger.error('e');
+    logger.debug('d');
+    assert.equal(seen.length, 3);
+    assert.deepEqual(seen.map((x) => x.level), ['warn', 'error', 'debug']);
+    assert.equal(logger.getBuffer().length, 3);
 });
 
 test('debug entries arrive when enabled and payloads are redacted', () => {

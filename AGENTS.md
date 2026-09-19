@@ -60,7 +60,7 @@ SillyTavern Prefill 输入 → Prefill Parser → 统一 Prefill Model → Provi
 
 ## 版本与发布
 
-- 版本号**双维护**：`manifest.json` 与 `package.json` 的 `version` 必须一致（当前 `0.2.1`，以 manifest 为准）。
+- 版本号**双维护**：`manifest.json` 与 `package.json` 的 `version` 必须一致（当前 `0.2.2`，以 manifest 为准）。
 - **安装方式（当前 ST release）**：Install extension 填 GitHub 公开仓库 URL，服务端
   `git clone` 到 `data/<user>/extensions/<repo名>`，要求仓库**根目录**有合法
   `manifest.json`（本项目满足）。仓库必须是 public。
